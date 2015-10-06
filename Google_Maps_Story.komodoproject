@@ -2,5 +2,6 @@
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="0e6999e5-995b-418c-81c0-96292d5ad68c" kpf_version="5" name="Google_Maps_Story.komodoproject">
 <preference-set idref="0e6999e5-995b-418c-81c0-96292d5ad68c" id="project" preftype="project">
+  <long id="prefs_version">1</long>
 </preference-set>
 </project>
