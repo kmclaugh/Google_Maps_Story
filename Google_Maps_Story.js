@@ -1,36 +1,33 @@
-
-
+start_point = new point(latitude=-2.500342, longitude=32.686780, zoom=4, marker=false, content=false);
+var point0 = new point(-2.500342, 32.686780, 8, marker=true, content='test', index=0);
+var point1 = new point(3.157547, 38.750983, 8, marker=false, content=false, index=1);
+var point2 = new point(-6.051057, 39.207935, 8, marker=true, content='test2', index=2);
+var the_points = [point0, point1, point2];
 
 var map;
 
 function initMap(map_id) {
     map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: -4, lng: 4},
+        center: {lat: -2.500342, lng: 32.686780},
         zoom: 6
     });
-    
     google.maps.event.addListener(map, "rightclick", function(event) {
         var lat = event.latLng.lat();
         var lng = event.latLng.lng();
+        var center = map.getCenter();
+        var zoom = map.getZoom();
         // populate yor box/field with lat, lng
-        console.log("Lat=" + lat + "; Lng=" + lng);
+        console.log("Click " + lat + ", " + lng);
+        console.log("Center " + center);
+        console.log("Zoom " + zoom);
     });
 }
-
-
 $(window).load(function () {
     
     $(document).ready(function () {
-        
-        var start_point = new point(latitude=-2.500342, longitude=32.686780, sw_lat=-7.18810087117902, sw_long=28.80615234375, nw_lat=3.9957805129630253, nw_long=43.22021484375, marker=false, content=false);
-        var point0 = new point(-2.500342, 32.686780, sw_lat=-2.953185, sw_long=26.551002, nw_lat=3.157547, nw_long=38.750983, marker=true, content='test', index=0);
-        var point1 = new point(3.157547, 38.750983, sw_lat=-2.953185, sw_long=26.551002, nw_lat=5.430910, nw_long=40.239966, marker=false, content=false, index=1);
-        var point2 = new point(-6.051057, 39.207935, sw_lat=-2.953185, sw_long=26.551002, nw_lat=5.430910, nw_long=40.239966, marker=true, content='test2', index=2);
-        var the_points = [point0, point1, point2];
     
         //init the story stuff
         var the_story = new story(map=map, start_point=start_point, points=the_points);
-        the_story.start();
         the_story.plot_path();
         the_story.plot_markers();
         
@@ -51,11 +48,6 @@ function story(map, start_point, points) {
     this.points = points;
     this.map = map
     
-    this.start = function(){
-        this.map.setCenter(this.start_point.position);
-        this.map.fitBounds(this.start_point.bounds)
-    }
-    
     this.move_to_next = function(current_index) {
         /*pan and zooms to the next point if the next point has a marker then it stops
          *if not, then it calls itself (recursive) and pans to the next point*/
@@ -70,18 +62,27 @@ function story(map, start_point, points) {
         if (current_point.index < this.points[this.points.length-1].index) {
             //get the next point and pan to it
             current_point = this.points[current_point.index+1];
-            this.map.panTo(current_point.position);
+            map.panTo(current_point.position);
             
-            //After panning to the next point, call move_to_next again if the next point does NOT has a marker
-            //If it does, open the marker
+            //After panning to the next point, 
             google.maps.event.addListenerOnce(map, 'idle', function(){
+                
+                //if the next point does NOT has a marker call move_to_next again 
                 if (current_point.marker == false) {
                     self.move_to_next(current_point.index);
                 }
+                
+                //If it does have a marker,
                 else{
-                    google.maps.event.trigger(current_point.marker, 'click');//kinda HACKy
-                    self.map.fitBounds(current_point.bounds);
+                    //Wait for half a second then set the zoom and show the infowindow
+                    window.setTimeout(function() {
+                        self.map.setZoom(current_point.zoom);
+                        google.maps.event.addListenerOnce(self.map, 'idle', function(){
+                            google.maps.event.trigger(current_point.marker, 'click');//kinda HACKy
+                        });
+                    }, 500);
                 }
+                
             });//close addListenerOnce
         }//close if last point
         
@@ -135,11 +136,9 @@ function story(map, start_point, points) {
     
 }//close story
 
-function point(latitude, longitude, sw_lat, sw_long, nw_lat, nw_long, marker, content, index){
+function point(latitude, longitude, zoom, marker, content, index){
     this.position = {lat: latitude, lng: longitude};
-    this.southwest_bound = new google.maps.LatLng(sw_lat, sw_long)
-    this.northwest_bound = new google.maps.LatLng(nw_lat, nw_long)
-    this.bounds = new google.maps.LatLngBounds(this.southwest_bound, this.northwest_bound);
+    this.zoom = zoom;
     this.marker = marker;
     this.index = index;
     this.content = content+'<p><button type="button" name="next" index="'+this.index+'">Next</button></p>';
