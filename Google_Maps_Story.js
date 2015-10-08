@@ -1,4 +1,4 @@
-start_point = new point(latitude=-2.500342, longitude=32.686780, zoom=4, marker=false, content=false);
+start_point = new point(-4.2988547931769014, 34.24683859375001, zoom=5, marker=false, content=false);
 var point0 = new point(-2.500342, 32.686780, 8, marker=true, content='test', index=0);
 var point1 = new point(3.157547, 38.750983, 8, marker=false, content=false, index=1);
 var point2 = new point(-6.051057, 39.207935, 8, marker=true, content='test2', index=2);
@@ -7,10 +7,13 @@ var the_points = [point0, point1, point2];
 var map;
 
 function initMap(map_id) {
+    //Create the map
     map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: -2.500342, lng: 32.686780},
-        zoom: 6
+        center: start_point.position,
+        zoom: start_point.zoom
     });
+    
+    //Right click print map info to the console to make it easier to create stories
     google.maps.event.addListener(map, "rightclick", function(event) {
         var lat = event.latLng.lat();
         var lng = event.latLng.lng();
@@ -20,8 +23,10 @@ function initMap(map_id) {
         console.log("Click " + lat + ", " + lng);
         console.log("Center " + center);
         console.log("Zoom " + zoom);
-    });
-}
+    });//close righ click function
+    
+}//close initMap
+
 $(window).load(function () {
     
     $(document).ready(function () {
@@ -36,8 +41,10 @@ $(window).load(function () {
             var current_index = Number($(this).attr('index'));
             the_story.move_to_next(current_index);
         });
-    });
-});
+        
+    });//close document ready
+    
+});//close window load
 
 function story(map, start_point, points) {
     /*This class has the data and functions for creating the stoy*/
