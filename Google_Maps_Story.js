@@ -1,6 +1,6 @@
-start_point = new point(-4.2988547931769014, 34.24683859375001, zoom=5, marker=false, content=false);
-var point0 = new point(-2.500342, 32.686780, 8, marker=true, content='test', index=0);
-var point1 = new point(3.157547, 38.750983, 8, marker=false, content=false, index=1);
+var start_point = new point(-4.2988547931769014, 34.24683859375001, zoom=5, marker=false, content='Welcome to a google map story', index=-1);
+var point0 = new point(-2.500342, 32.686780, 6, marker=true, content='test', index=0);
+var point1 = new point(3.157547, 38.750983, 6, marker=false, content=false, index=1);
 var point2 = new point(-6.051057, 39.207935, 8, marker=true, content='test2', index=2);
 var the_points = [point0, point1, point2];
 
@@ -35,6 +35,7 @@ $(window).load(function () {
         var the_story = new story(map=map, start_point=start_point, points=the_points);
         the_story.plot_path();
         the_story.plot_markers();
+        the_story.start_intro();
         
         //move_to_next when clicking next
         $('body').on('click', "[name='next']", function(){
@@ -53,16 +54,36 @@ function story(map, start_point, points) {
     var self = this;
     this.start_point = start_point;
     this.points = points;
-    this.map = map
+    this.map = map;
+    this.intro_infowindow;
+    
+    this.start_intro = function(){
+        /*Creates the introduction window*/
+        var latitude = self.map.getBounds().getNorthEast().lat();
+        var longitude = self.start_point.position['lng'];
+        var intro_position = {lat: latitude, lng: longitude};
+        
+        this.intro_infowindow = new google.maps.InfoWindow({
+            content: start_point.content,
+            position: intro_position
+        });
+        this.intro_infowindow.open(self.map);
+    }
     
     this.move_to_next = function(current_index) {
         /*pan and zooms to the next point if the next point has a marker then it stops
          *if not, then it calls itself (recursive) and pans to the next point*/
         
         //close the current markers infowindow
-        var current_point = this.points[current_index];
-        if (current_point.marker != false) {
-                current_point.marker.infowindow.close();
+        if (current_index == -1) {
+            this.intro_infowindow.close();
+            current_point = self.start_point;
+        }
+        else{
+            var current_point = this.points[current_index];
+            if (current_point.marker != false) {
+                    current_point.marker.infowindow.close();
+            }
         }
         
         //If this isn't the last point in the story,
@@ -92,7 +113,6 @@ function story(map, start_point, points) {
                 
             });//close addListenerOnce
         }//close if last point
-        
         
     }//close move_to_next
     
@@ -148,6 +168,10 @@ function point(latitude, longitude, zoom, marker, content, index){
     this.zoom = zoom;
     this.marker = marker;
     this.index = index;
-    this.content = content+'<p><button type="button" name="next" index="'+this.index+'">Next</button></p>';
-
+    if (index == -1) {
+        this.content = content+'<p><button type="button" name="next" index="-1">Start</button></p>';
+    }
+    else{
+        this.content = content+'<p><button type="button" name="next" index="'+this.index+'">Next</button></p>';
+    }
 }
