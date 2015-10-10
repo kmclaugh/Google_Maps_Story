@@ -1,8 +1,19 @@
-var start_point = new point(-4.2988547931769014, 34.24683859375001, zoom=5, marker=false, content='Welcome to a google map story', index=-1);
-var point0 = new point(-2.500342, 32.686780, 6, marker=true, content='test', index=0);
-var point1 = new point(3.157547, 38.750983, 6, marker=false, content=false, index=1);
-var point2 = new point(-6.051057, 39.207935, 8, marker=true, content='test2', index=2);
-var the_points = [point0, point1, point2];
+var the_data = [[-6.22793393,39.2376709,9,'Zanzibar'],
+                [-6.451776154,38.8861084,9,'Bagamoyo'],
+                [-6.920292099,36.49726868,9,'The Rubeho Mountains'],
+                [-6.116659542,35.49656868,9,'Ugogo'],
+                [-5.01891307,32.81620502,9,'Tabora'],
+                [-6.053161296,31.9152832,9,'South Route'],
+                [-5.099600191,30.82094193,8,'South of the Malagarasi River'],
+                [-8.103673289,30.94985962,8,'Isinga'],
+                [-4.913609408,29.67407227,9,'Ujiji']]
+the_points = [];
+for (var i = 0; i < the_data.length; i++) {
+    datum = the_data[i];
+    the_point = new point(datum[0], datum[1], datum[2], true, datum[3], i);
+    the_points.push(the_point);
+}
+var start_point = new point(-8.464731744958245, 33.07846069773436, zoom=5, marker=false, content='Welcome to a google map story', index=-1);
 
 var map;
 
@@ -104,11 +115,17 @@ function story(map, start_point, points) {
                 else{
                     //Wait for half a second then set the zoom and show the infowindow
                     window.setTimeout(function() {
-                        self.map.setZoom(current_point.zoom);
-                        google.maps.event.addListenerOnce(self.map, 'idle', function(){
+                        if (self.map.getZoom() != current_point.zoom) {
+                            self.map.setZoom(current_point.zoom);
+                            google.maps.event.addListenerOnce(self.map, 'idle', function(){
+                                google.maps.event.trigger(current_point.marker, 'click');//kinda HACKy
+                            });
+                        }
+                        else{
                             google.maps.event.trigger(current_point.marker, 'click');//kinda HACKy
-                        });
+                        }
                     }, 500);
+                    
                 }
                 
             });//close addListenerOnce
