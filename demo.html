@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style type="text/css">
+            html, body { height: 100%; margin: 0; padding: 0; }
+            #map { height: 100%; }
+        </style>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.js"></script>
+        <script type="text/javascript" src="Google_Maps_Story.js"></script>
+        <script>
+            var start_point;
+            var map;
+            var the_data = [[-8.464731744958245, 33.07846069773436,5,false,'Welcome to a google map story'],
+                            [-6.22793393,39.2376709,9,true,'Zanzibar'],
+                            [-6.451776154,38.8861084,9,true,'Bagamoyo'],
+                            [-6.920292099,36.49726868,9,true,'The Rubeho Mountains'],
+                            [-6.116659542,35.49656868,9,true,'Ugogo'],
+                            [-5.01891307,32.81620502,9,true,'Tabora'],
+                            [-6.053161296,31.9152832,9,false,'South Route'],
+                            [-5.099600191,30.82094193,8,true,'South of the Malagarasi River'],
+                            [-8.103673289,30.94985962,8,true,'Isinga'],
+                            [-4.913609408,29.67407227,9,true,'Ujiji']];
+            var the_points = create_the_points(the_data);
+            var the_story;
+        </script>
+        <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0RNsTfOpGI5G61lIl625oDrsHiv2pc3o&callback=initMap">
+        </script>
+        <script>
+            function initMap(map_id) {
+                /*Creates the map object. Is called after the google maps api script is loaded via callback*/
+                //Create the map
+                map = new google.maps.Map(document.getElementById('map'), {
+                    center: start_point.position,
+                    zoom: start_point.zoom,
+                    mapTypeId: google.maps.MapTypeId.HYBRID
+                });
+        
+            }//close initMap
+            $(window).load(function () {
+                //$(document).ready(function () { 
+                    //init the story stuff
+                    the_story = new story(map=map, start_point=start_point, points=the_points);
+                    the_story.plot_path();
+                    the_story.plot_markers();
+                    the_story.start_intro();
+                //});
+            });
+        </script> 
+    </head>
+    <body>
+        <div id="map"></div>
+    </body>
+</html>

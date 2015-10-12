@@ -1,58 +1,42 @@
-var the_data = [[-6.22793393,39.2376709,9,'Zanzibar'],
-                [-6.451776154,38.8861084,9,'Bagamoyo'],
-                [-6.920292099,36.49726868,9,'The Rubeho Mountains'],
-                [-6.116659542,35.49656868,9,'Ugogo'],
-                [-5.01891307,32.81620502,9,'Tabora'],
-                [-6.053161296,31.9152832,9,'South Route'],
-                [-5.099600191,30.82094193,8,'South of the Malagarasi River'],
-                [-8.103673289,30.94985962,8,'Isinga'],
-                [-4.913609408,29.67407227,9,'Ujiji']]
-the_points = [];
-for (var i = 0; i < the_data.length; i++) {
-    datum = the_data[i];
-    the_point = new point(datum[0], datum[1], datum[2], true, datum[3], i);
-    the_points.push(the_point);
-}
-var start_point = new point(-8.464731744958245, 33.07846069773436, zoom=5, marker=false, content='Welcome to a google map story', index=-1);
-
-var map;
-
-function initMap(map_id) {
-    //Create the map
-    map = new google.maps.Map(document.getElementById('map'), {
-        center: start_point.position,
-        zoom: start_point.zoom
-    });
-    
-    //Right click print map info to the console to make it easier to create stories
-    google.maps.event.addListener(map, "rightclick", function(event) {
-        var lat = event.latLng.lat();
-        var lng = event.latLng.lng();
-        var center = map.getCenter();
-        var zoom = map.getZoom();
-        // populate yor box/field with lat, lng
-        console.log("Click " + lat + ", " + lng);
-        console.log("Center " + center);
-        console.log("Zoom " + zoom);
-    });//close righ click function
-    
-}//close initMap
+   
+function create_the_points(data_points){
+    /*Transforms data_points given in [[latitude, longitude, zoom, market,content],...] format
+     *into the start_point and the_points. Assumes the first data_point in the array is the start point*/
+    var the_points = [];
+    for (var i = 0; i < data_points.length; i++) {
+        var datum = data_points[i];
+        if (i == 0) {
+            start_point = new point(datum[0], datum[1], datum[2], datum[3], datum[4], i-1);
+        }
+        else{
+            the_point = new point(datum[0], datum[1], datum[2], datum[3], datum[4], i-1);
+            the_points.push(the_point);
+        }
+    }//end for
+    return the_points;
+}//end create_the_points
 
 $(window).load(function () {
     
     $(document).ready(function () {
-    
-        //init the story stuff
-        var the_story = new story(map=map, start_point=start_point, points=the_points);
-        the_story.plot_path();
-        the_story.plot_markers();
-        the_story.start_intro();
         
         //move_to_next when clicking next
         $('body').on('click', "[name='next']", function(){
             var current_index = Number($(this).attr('index'));
             the_story.move_to_next(current_index);
         });
+        
+        //Right click print map info to the console to make it easier to create stories
+        google.maps.event.addListener(map, "rightclick", function(event) {
+            var lat = event.latLng.lat();
+            var lng = event.latLng.lng();
+            var center = map.getCenter();
+            var zoom = map.getZoom();
+            // populate yor box/field with lat, lng
+            console.log("Click " + lat + ", " + lng);
+            console.log("Center " + center);
+            console.log("Zoom " + zoom);
+        });//close righ click function
         
     });//close document ready
     
