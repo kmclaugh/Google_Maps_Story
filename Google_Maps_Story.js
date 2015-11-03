@@ -3,17 +3,24 @@ function create_the_points(data_points){
     /*Transforms data_points given in [[latitude, longitude, zoom, market,content],...] format
      *into the start_point and the_points. Assumes the first data_point in the array is the start point*/
     var the_points = [];
+    var marker_index = 0;
+    
     for (var i = 0; i < data_points.length; i++) {
         var datum = data_points[i];
-        if (i == 0) {
-            start_point = new point(datum[0], datum[1], datum[2], datum[3], datum[4], i-1);
+        
+        if (datum[3] == true){
+            the_point = new point(datum[0], datum[1], datum[2], datum[3], datum[4], i, marker_index);
+            marker_index += 1;
         }
+        
         else{
-            the_point = new point(datum[0], datum[1], datum[2], datum[3], datum[4], i-1);
-            the_points.push(the_point);
+            the_point = new point(datum[0], datum[1], datum[2], datum[3], datum[4], i, false);
         }
+        
+        the_points.push(the_point);
     }//end for
     return the_points;
+
 }//end create_the_points
 
 $(window).load(function () {
@@ -22,8 +29,18 @@ $(window).load(function () {
         
         //move_to_next when clicking next
         $('body').on('click', "[name='next']", function(){
-            var current_index = Number($(this).attr('index'));
-            the_story.move_to_next(current_index);
+            var current_point_index = Number($(this).attr('index'));
+            if (current_point_index == -1){
+                var story_index = 0;
+                start_point.infowindow.close();
+            }
+            else{
+                var story_index = Number($(this).attr('story_index'));
+            }
+            
+            var the_story = story_list[story_index];
+            
+            the_story.move_to_next(current_point_index);
         });
         
         //Right click print map info to the console to make it easier to create stories
@@ -42,27 +59,36 @@ $(window).load(function () {
     
 });//close window load
 
-function story(map, start_point, points) {
+function start_intro(the_start_point, map){
+    /*Creates the introduction window*/
+    var latitude = map.getBounds().getNorthEast().lat();
+    var longitude = the_start_point.position['lng'];
+    var intro_position = {lat: latitude, lng: longitude};
+    var content = the_start_point.content + '<p><button type="button" name="next" index="-1">Start</button></p>'
+    the_start_point.infowindow = new google.maps.InfoWindow({
+        content: content,
+        position: intro_position
+    });
+    the_start_point.infowindow.open(map);
+}
+
+function story(map, points, on_end) {
     /*This class has the data and functions for creating the stoy*/
     
     //Init variable
     var self = this;
-    this.start_point = start_point;
     this.points = points;
     this.map = map;
-    this.intro_infowindow;
+    this.content_list = [];
+    this.index = story_list.length;
+    this.on_end = on_end;
+    story_list.push(this);
     
-    this.start_intro = function(){
-        /*Creates the introduction window*/
-        var latitude = self.map.getBounds().getNorthEast().lat();
-        var longitude = self.start_point.position['lng'];
-        var intro_position = {lat: latitude, lng: longitude};
-        
-        this.intro_infowindow = new google.maps.InfoWindow({
-            content: start_point.content,
-            position: intro_position
+    this.make_content_list = function(content_wrapper_id){
+        $('#'+content_wrapper_id).children().each(function(){
+            var_the_html = $(this).html();
+            self.content_list.push(var_the_html);
         });
-        this.intro_infowindow.open(self.map);
     }
     
     this.move_to_next = function(current_index) {
@@ -70,11 +96,7 @@ function story(map, start_point, points) {
          *if not, then it calls itself (recursive) and pans to the next point*/
         
         //close the current markers infowindow
-        if (current_index == -1) {
-            this.intro_infowindow.close();
-            current_point = self.start_point;
-        }
-        else{
+        if (current_index != -1){
             var current_point = this.points[current_index];
             if (current_point.marker != false) {
                     current_point.marker.infowindow.close();
@@ -82,15 +104,15 @@ function story(map, start_point, points) {
         }
         
         //If this isn't the last point in the story,
-        if (current_point.index < this.points[this.points.length-1].index) {
+        if (current_index < this.points.length-1) {
             //get the next point and pan to it
-            current_point = this.points[current_point.index+1];
-            map.panTo(current_point.position);
+            current_point = this.points[current_index+1];
+            self.map.panTo(current_point.position);
             
             //After panning to the next point, 
             google.maps.event.addListenerOnce(map, 'idle', function(){
                 
-                //if the next point does NOT has a marker call move_to_next again 
+                //if the next point does NOT have a marker call move_to_next again 
                 if (current_point.marker == false) {
                     self.move_to_next(current_point.index);
                 }
@@ -108,16 +130,23 @@ function story(map, start_point, points) {
                         else{
                             google.maps.event.trigger(current_point.marker, 'click');//kinda HACKy
                         }
-                    }, 500);
+                    }, 1000);
                     
                 }
                 
             });//close addListenerOnce
         }//close if last point
         
+        //If this is the last point run the on_end function if there is one
+        else{
+            if (self.on_end != false){
+                self.on_end();
+            }
+        }
+        
     }//close move_to_next
     
-    this.plot_path = function(){
+    this.plot_path = function(color){
         /*plots the path of the story from the points*/
         var path_coordinates = []
         for (var i = 0; i < this.points.length; i++) {
@@ -127,7 +156,7 @@ function story(map, start_point, points) {
         var path = new google.maps.Polyline({
             path: path_coordinates,
             geodesic: true,
-            strokeColor: '#FF0000',
+            strokeColor: color,
             strokeOpacity: 1.0,
             strokeWeight: 2
         });
@@ -155,8 +184,10 @@ function story(map, start_point, points) {
     
     this.bind_info_window = function(marker, map, infowindow, point) {
         /*Binds the given info window to the marker and adds the given content using a closure*/
+        var content = self.content_list[point.marker_index];
+        content = content+'<p><button type="button" story_index='+self.index+' name="next" index="'+point.index+'">Next</button></p>';
         google.maps.event.addListener(marker, 'click', function() {
-            marker.infowindow.setContent(point.content);
+            marker.infowindow.setContent(content);
             marker.infowindow.open(map, marker);
         });
         marker.infowindow.close();
@@ -164,15 +195,11 @@ function story(map, start_point, points) {
     
 }//close story
 
-function point(latitude, longitude, zoom, marker, content, index){
+function point(latitude, longitude, zoom, marker, content, index, marker_index){
     this.position = {lat: latitude, lng: longitude};
     this.zoom = zoom;
     this.marker = marker;
     this.index = index;
-    if (index == -1) {
-        this.content = content+'<p><button type="button" name="next" index="-1">Start</button></p>';
-    }
-    else{
-        this.content = content+'<p><button type="button" name="next" index="'+this.index+'">Next</button></p>';
-    }
+    this.marker_index = marker_index
+    
 }
